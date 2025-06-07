@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: securepass_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ~/Desktop/docker-data/postgres:/var/lib/postgresql/data
+    networks:
+      - securepass_net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: securepass_pgadmin
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:80"
+    volumes:
+      - ~/Desktop/docker-data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - securepass_net
+
+networks:
+  securepass_net:
+
