@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SecurepassBackendApplication {
+public class SecurepassApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SecurepassBackendApplication.class, args);
+		SpringApplication.run(SecurepassApplication.class, args);
 	}
 
 }
