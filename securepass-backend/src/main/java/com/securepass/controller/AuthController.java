@@ -6,10 +6,12 @@ import com.securepass.entity.User;
 import com.securepass.repository.UserRepository;
 import com.securepass.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -21,15 +23,23 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        return userRepository.findByUsername(loginRequest.getUsername())
+        String username = loginRequest.getUsername();
+        log.info("🔐 Login attempt for username: {}", username);
+
+        return userRepository.findByUsername(username)
                 .map(user -> {
                     if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                        String token = jwtUtil.generateToken(user.getUsername());
+                        String token = jwtUtil.generateToken(user);
+                        log.info("✅ Login successful for username: {}", username);
                         return ResponseEntity.ok(new LoginResponse(token));
                     } else {
+                        log.warn("❌ Invalid password for username: {}", username);
                         return ResponseEntity.status(401).body("Invalid password");
                     }
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("User not found"));
+                .orElseGet(() -> {
+                    log.warn("❌ Login failed: User not found with username: {}", username);
+                    return ResponseEntity.status(404).body("User not found");
+                });
     }
 }
