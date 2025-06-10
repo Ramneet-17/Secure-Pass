@@ -64,3 +64,28 @@ mvnw*
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Compiled output
+securepass-frontend/dist
+securepass-frontend/tmp
+securepass-frontend/out-tsc
+securepass-frontend/bazel-out
+
+# Node
+securepass-frontend/node_modules
+securepass-frontend/npm-debug.log
+securepass-frontend/yarn-error.log
+
+# Miscellaneous
+/securepass-frontend/.angular/cache
+.sass-cache/
+/securepass-frontend/connect.lock
+/securepass-frontend/coverage
+/securepass-frontend/libpeerconnection.log
+/securepass-frontend/testem.log
+securepass-frontend/typings
+
+# System files
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,59 @@
+<div class="container">
+  <app-navbar (onSearch)="onSearch($event)"></app-navbar>
+
+  <div class="vault-content">
+    <!-- Stats Cards -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number">{{ totalAccounts }}</div>
+        <div class="stat-label">Total Accounts</div>
+      </div>
+      <div class="stat-card strong-passwords">
+        <div class="stat-number">{{ strongPasswords }}</div>
+        <div class="stat-label">Strong Passwords</div>
+      </div>
+      <div class="stat-card need-updates">
+        <div class="stat-number">{{ needUpdates }}</div>
+        <div class="stat-label">Need Updates</div>
+      </div>
+    </div>
+
+    <!-- Add New Button -->
+    <div class="add-section">
+      <button class="add-btn" (click)="toggleForm()">
+        <span>{{ showForm ? '✕' : '+' }}</span>
+        {{ showForm ? 'Cancel' : 'Add New' }}
+      </button>
+    </div>
+
+    <!-- Add Form -->
+    <div class="form-container" [class.show]="showForm">
+      <app-credential-form *ngIf="showForm" (onAdd)="onAdd($event)"></app-credential-form>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Credentials Grid -->
+    <div class="vault-grid" *ngIf="filteredCredentials.length > 0">
+      <app-credential-card 
+        *ngFor="let cred of filteredCredentials" 
+        [credential]="cred" 
+        (onDelete)="onDelete($event)">
+      </app-credential-card>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredCredentials.length === 0 && !errorMessage">
+      <div class="empty-icon">🔐</div>
+      <h3>{{ searchTerm ? 'No credentials found' : 'Your vault is empty' }}</h3>
+      <p>{{ searchTerm ? 'Try adjusting your search terms' : 'Add your first credential to get started' }}</p>
+      <button *ngIf="!searchTerm" class="add-btn" (click)="toggleForm()">
+        <span>+</span>
+        Add Your First Credential
+      </button>
+    </div>
+  </div>
+</div>

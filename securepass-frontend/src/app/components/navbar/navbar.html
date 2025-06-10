@@ -1,0 +1,22 @@
+<!-- navbar.html -->
+<header class="header">
+  <h1>
+    <span class="lock-icon">🔒</span>
+    Your Secure Vault
+  </h1>
+  <div class="header-actions">
+    <div class="search-container">
+      <input 
+        type="text" 
+        class="search-input" 
+        placeholder="Search your vault..." 
+        [(ngModel)]="searchTerm" 
+        (input)="onSearchInput()"
+      >
+    </div>
+    <button class="sign-out-btn" (click)="signOut()">
+      <span>🚪</span>
+      Sign Out
+    </button>
+  </div>
+</header>
