@@ -29,6 +29,20 @@ services:
     networks:
       - securepass_net
 
+  springboot-app:
+    build:
+      context:  ./securepass-backend
+    container_name: securepass_backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    networks:
+      - securepass_net
+
 networks:
   securepass_net:
 
