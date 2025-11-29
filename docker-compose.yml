@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -33,15 +31,22 @@ services:
     build:
       context:  ./securepass-backend
     container_name: securepass_backend
-    restart: unless-stopped
     depends_on:
       - postgres
     ports:
       - "8081:8081"
     env_file:
       - .env
-    environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:dev}  # Default to 'dev' profile
+    networks:
+      - securepass_net
+
+  frontend:
+    build:
+      context: ./securepass-frontend
+      dockerfile: Dockerfile
+    container_name: securepass_frontend
+    ports:
+      - "4200:80"
     networks:
       - securepass_net
 

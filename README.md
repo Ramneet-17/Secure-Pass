@@ -8,6 +8,8 @@ Secure-Pass is a personal and team-friendly password manager built with a focus 
 - [UI Preview](#-ui-preview)
 - [Tech Stack](#-tech-stack)
 - [Installation & Setup](#-installation--setup)
+- [Building Backend with Maven Profiles](#building-backend-with-maven-profiles)
+- [Building Docker Images with Maven](#-building-docker-images-with-maven)
 - [Usage](#-usage)
 - [Project Structure](#-project-structure)
 - [Future Roadmap](#-future-roadmap)
@@ -57,15 +59,22 @@ cp .env.example .env
 # - ADMIN_PASSWORD (min 8 characters)
 # - SPRING_PROFILES_ACTIVE=dev (or 'prod' for production)
 
-# Step 3: Build and run all services using Docker Compose
+# Step 3: Build and run all services using Docker Compose (includes frontend)
 docker-compose up --build
 
-# Step 4: Run Angular frontend separately in development mode
+# The frontend will be available at: http://localhost:4200
+# The backend will be available at: http://localhost:8081
+
+# OR run services separately:
+
+# Backend: Build Docker image with Maven (see Docker Build section below)
+cd securepass-backend
+mvn clean package -Pdocker
+
+# Frontend: Run Angular in development mode
 cd securepass-frontend
 npm install
 ng serve
-
-# The frontend will be available at: http://localhost:4200
 ```
 
 ### Building Backend with Maven Profiles
@@ -86,6 +95,46 @@ mvn spring-boot:run
 ```
 
 See [MAVEN_PROFILES.md](securepass-backend/MAVEN_PROFILES.md) for detailed Maven profile usage.
+
+### 🐳 Building Docker Images
+
+#### Backend with Maven
+
+You can build Docker images directly from Maven using the `docker` profile:
+
+```bash
+# Build Docker image (recommended)
+cd securepass-backend
+mvn clean package -Pdocker
+
+# Build with custom tag
+mvn clean package -Pdocker -Ddocker.image.tag=1.0.0
+
+# Build with custom registry
+mvn clean package -Pdocker \
+  -Ddocker.image.name=my-registry/securepass-backend \
+  -Ddocker.image.tag=latest
+
+# Build using property instead of profile
+mvn clean package -Ddocker.skip=false
+```
+
+**Note**: By default, Docker build is skipped. Activate the `docker` profile or set `docker.skip=false` to build.
+
+The Docker image will be tagged as `securepass-backend:${project.version}` by default.
+
+See [DOCKER_BUILD.md](securepass-backend/DOCKER_BUILD.md) for detailed backend Docker build documentation.
+
+#### Frontend
+
+The frontend is automatically built when using Docker Compose. To build manually:
+
+```bash
+cd securepass-frontend
+docker build -t securepass-frontend:latest .
+```
+
+See [DOCKER_BUILD.md](securepass-frontend/DOCKER_BUILD.md) for detailed frontend Docker build documentation.
 
 ## ✅ Usage
 - Log in using your admin password (u can change it before in securepass-backend/src/main/java/com/securepass/service/AdminUserInitializer.java)
