@@ -1,106 +1,185 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/components/vault/vault.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CredentialService } from '../../services/credential';
+import { Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+
+import { CredentialService, Credential } from '../../services/credential';
+import { ConfirmationService } from '../../services/confirmation.service';
+import { ToastService } from '../../services/toast.service';
+import { CredentialFormService } from '../../services/credential-form.service';
+import { SearchService } from '../../services/search.service';
+
 import { CredentialCardComponent } from '../credential-card/credential-card';
-import { CredentialFormComponent } from '../credential-form/credential-form';
-import { NavbarComponent } from '../navbar/navbar';
+import { isStrongPassword } from '../../utils/password.util';
 
 @Component({
   selector: 'app-vault',
   standalone: true,
+  imports: [
+    CommonModule,
+    CredentialCardComponent
+  ],
   templateUrl: './vault.html',
-  styleUrls: ['./vault.css'],
-  imports: [CommonModule, CredentialCardComponent, CredentialFormComponent, NavbarComponent]
+  styleUrls: ['./vault.css']
 })
-export class VaultComponent implements OnInit {
-  credentials: any[] = [];
-  filteredCredentials: any[] = [];
-  showForm = false;
-  errorMessage = '';
-  searchTerm = '';
+export class VaultComponent implements OnInit, OnDestroy {
 
-  constructor(private credentialService: CredentialService) {}
+  credentials: Credential[] = [];
+  filteredCredentials: Credential[] = [];
+
+  searchTerm = '';
+  showOnlyWeak = false;
+  deleting = false;
+  refreshing = false;
+
+  private credsSub?: Subscription;
+  private changesSub?: Subscription;
+  private searchSub?: Subscription;
+
+  constructor(
+    public credentialFormService: CredentialFormService,
+    private credentialService: CredentialService,
+    private confirmation: ConfirmationService,
+    private toastService: ToastService,
+    private searchService: SearchService
+  ) {}
 
   ngOnInit(): void {
-    this.loadCredentials();
-  }
 
-  loadCredentials(): void {
-    this.credentialService.getAll().subscribe({
-      next: (data) => {
-        this.credentials = data;
-        this.filteredCredentials = data;
-      },
-      error: (err) => this.errorMessage = err.error || 'Failed to load credentials'
+    // 1) MAIN DATA SOURCE
+    this.credsSub = this.credentialService.creds$.subscribe(list => {
+      this.credentials = list ?? [];
+      this.applyFilter(this.searchTerm);
     });
+
+    // 2) INITIAL LOAD
+    this.credentialService.load();
+
+    // 3) RELOAD WHEN FORM ACTION HAPPENS
+    this.changesSub = this.credentialFormService.changes$
+      .pipe(debounceTime(50))
+      .subscribe(() => this.credentialService.load());
+
+    // 4) SEARCH
+    this.searchSub = this.searchService.search$
+      .subscribe(q => {
+        this.searchTerm = q ?? '';
+        this.applyFilter(this.searchTerm);
+      });
   }
 
-  onAdd(newCred: any): void {
-    this.credentialService.add(newCred).subscribe({
+  ngOnDestroy() {
+    this.credsSub?.unsubscribe();
+    this.changesSub?.unsubscribe();
+    this.searchSub?.unsubscribe();
+  }
+
+  trackById(_: number, item: Credential) {
+    return item.id;
+  }
+
+  /** DELETE FLOW */
+  async askDelete(id: number): Promise<void> {
+    const cred = this.credentials.find(c => c.id === id);
+    if (!cred) return;
+
+    const handle = this.confirmation.open({
+      title: 'Delete Credential',
+      message: `Delete ${cred.site}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel'
+    });
+
+    try { await handle.confirmed; }
+    catch { return; }
+
+    handle.setLoading(true);
+
+    this.credentialService.delete(cred.id).subscribe({
       next: () => {
-        this.showForm = false;
-        this.errorMessage = '';
-        this.loadCredentials();
-        this.showNotification('New credential added successfully!', 'success');
+        this.toastService.show(`Credential "${cred.site}" deleted successfully`, 'success', 3000);
+        this.credentialFormService.emitChange();
+        handle.close();
       },
-      error: () => {
-        this.errorMessage = 'Failed to add credential';
-        this.showNotification('Failed to add credential', 'error');
+      error: (err) => {
+        this.toastService.show(`Failed to delete "${cred.site}". Please try again.`, 'error', 4000);
+        handle.close();
       }
     });
   }
 
-  onDelete(id: number): void {
-    if (!confirm('Are you sure you want to delete this credential?')) return;
-    this.credentialService.delete(id).subscribe({
-      next: () => {
-        this.errorMessage = '';
-        this.loadCredentials();
-        this.showNotification('Credential deleted successfully', 'success');
-      },
-      error: () => {
-        this.errorMessage = 'Delete failed';
-        this.showNotification('Failed to delete credential', 'error');
-      }
-    });
-  }
+  /** FILTERING */
+  private applyFilter(term: string) {
+    const q = (term || '').trim().toLowerCase();
 
-  onSearch(searchTerm: string): void {
-    this.searchTerm = searchTerm;
-    if (!searchTerm.trim()) {
-      this.filteredCredentials = this.credentials;
-      return;
+    let list = this.credentials.slice();
+
+    if (q) {
+      list = list.filter(c =>
+        (c.site || '').toLowerCase().includes(q) ||
+        (c.username || '').toLowerCase().includes(q)
+      );
     }
 
-    this.filteredCredentials = this.credentials.filter(cred =>
-      cred.site.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cred.username.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (this.showOnlyWeak) {
+      list = list.filter(c => !isStrongPassword(c.password ?? ''));
+    }
+
+    this.filteredCredentials = list;
   }
 
-  toggleForm(): void {
-    this.showForm = !this.showForm;
+  toggleWeakFilter() {
+    this.showOnlyWeak = !this.showOnlyWeak;
+    this.applyFilter(this.searchTerm);
   }
 
-  get totalAccounts(): number {
-    return this.credentials.length;
+  onStatClick(type: 'total' | 'weak') {
+    if (type === 'weak') {
+      this.showOnlyWeak = true;
+    } else {
+      this.showOnlyWeak = false;
+    }
+    this.applyFilter(this.searchTerm);
   }
 
-  get strongPasswords(): number {
-    return this.credentials.filter(cred =>
-      cred.password && cred.password.length >= 8 &&
-      /[A-Z]/.test(cred.password) &&
-      /[0-9]/.test(cred.password) &&
-      /[!@#$%^&*]/.test(cred.password)
-    ).length;
+  /** STATS */
+  get totalAccounts() { return this.credentials.length; }
+  get strongPasswords() { return this.credentials.filter(c => isStrongPassword(c.password ?? '')).length; }
+  get needUpdates() { return this.credentials.filter(c => !isStrongPassword(c.password ?? '')).length; }
+
+  /** EDIT */
+  onEditCredential(id: number) {
+    const cred = this.credentials.find(c => c.id === id);
+    if (cred) this.credentialFormService.open({ ...cred });
   }
 
-  get needUpdates(): number {
-    return this.totalAccounts - this.strongPasswords;
+  handleCopy(ev: any) {
+    if (!ev.value || ev.value === '') {
+      const fieldName = ev.field === 'password' ? 'Password' : 'Username';
+      this.toastService.show(`Failed to copy ${fieldName.toLowerCase()}. Please try again.`, 'error', 4000);
+      return;
+    }
+    
+    const fieldName = ev.field === 'password' ? 'Password' : 'Username';
+    const cred = this.credentials.find(c => c.id === ev.id);
+    const siteName = cred?.site || 'credential';
+    this.toastService.show(`${fieldName} copied from ${siteName}`, 'success', 3000);
   }
 
-  private showNotification(message: string, type: 'success' | 'error' | 'info'): void {
-    // This could be implemented with a toast service or simple DOM manipulation
-    console.log(`${type.toUpperCase()}: ${message}`);
+  handleToggle(ev: any) {}
+
+  /** REFRESH CREDENTIALS */
+  refreshCredentials(): void {
+    if (this.refreshing) return;
+    
+    this.refreshing = true;
+    this.credentialService.load();
+    
+    // Reset refreshing state after a short delay
+    setTimeout(() => {
+      this.refreshing = false;
+      this.toastService.show('Credentials refreshed', 'success', 2000);
+    }, 500);
   }
 }

@@ -1,0 +1,62 @@
+# Development Profile Configuration
+# Use this profile for local development
+# Activate with: SPRING_PROFILES_ACTIVE=dev or --spring.profiles.active=dev
+
+server:
+  port: 8081
+
+app:
+  cors:
+    allowed-origins:
+      - "http://localhost:4200"
+      - "http://127.0.0.1:4200"
+
+spring:
+  application:
+    name: securepass
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  http:
+    encoding:
+      enabled: true
+      charset: UTF-8
+      force: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/securepassdb
+    username: admin
+    password: password123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-update schema in development
+    show-sql: true  # Show SQL queries for debugging
+    properties:
+      hibernate:
+        format_sql: true  # Format SQL for readability
+        use_sql_comments: true  # Show comments in SQL
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# JWT config - Dev defaults provided (INSECURE - only for local development!)
+# Override with environment variables for security
+jwt:
+  secret: dev-jwt-secret-key-minimum-32-characters-long-for-local-development-only
+  expiration: 86400000  # 1 Day expiration
+
+# AES config - Dev defaults provided (INSECURE - only for local development!)
+# Override with environment variables for security
+aes:
+  secret-key: 1234567890123456
+
+logging:
+  level:
+    root: INFO
+    com.securepass: DEBUG  # Debug logging for application packages
+    org.springframework.security: DEBUG  # Debug security logs
+    org.hibernate.SQL: DEBUG  # Show SQL queries
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Show SQL parameter binding
+  # Disable file logging in dev - use console only
+  file:
+    name: ""  # Empty string disables file logging
+

@@ -1,59 +1,63 @@
+<!-- src/app/components/vault/vault.html -->
 <div class="container">
-  <app-navbar (onSearch)="onSearch($event)"></app-navbar>
+  <!-- Header (navbar sits above in app) -->
 
-  <div class="vault-content">
-    <!-- Stats Cards -->
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-number">{{ totalAccounts }}</div>
-        <div class="stat-label">Total Accounts</div>
+  <!-- Top Action Buttons - Will be positioned by CSS -->
+  <div class="top-actions">
+    <!-- Refresh button (below add button) -->
+    <button 
+      class="fab-btn refresh-fab" 
+      (click)="refreshCredentials()"
+      [disabled]="refreshing"
+      title="Refresh credentials"
+      aria-label="Refresh credentials">
+      <svg class="refresh-icon" [class.spinning]="refreshing" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Stats Header -->
+  <div class="stats-row">
+    <div class="stats" role="region" aria-label="Vault statistics">
+      <div class="stat" (click)="onStatClick('total')" [class.active]="!showOnlyWeak">
+        <div class="stat-content">
+          <div class="stat-title">Total Accounts</div>
+          <div class="stat-number">{{ totalAccounts }}</div>
+        </div>
       </div>
-      <div class="stat-card strong-passwords">
-        <div class="stat-number">{{ strongPasswords }}</div>
-        <div class="stat-label">Strong Passwords</div>
+
+      <div class="stat stat-weak" (click)="onStatClick('weak')" [class.active]="showOnlyWeak">
+        <div class="stat-content">
+          <div class="stat-title">Weak Passwords</div>
+          <div class="stat-number">{{ needUpdates }}</div>
+        </div>
       </div>
-      <div class="stat-card need-updates">
-        <div class="stat-number">{{ needUpdates }}</div>
-        <div class="stat-label">Need Updates</div>
-      </div>
-    </div>
-
-    <!-- Add New Button -->
-    <div class="add-section">
-      <button class="add-btn" (click)="toggleForm()">
-        <span>{{ showForm ? '✕' : '+' }}</span>
-        {{ showForm ? 'Cancel' : 'Add New' }}
-      </button>
-    </div>
-
-    <!-- Add Form -->
-    <div class="form-container" [class.show]="showForm">
-      <app-credential-form *ngIf="showForm" (onAdd)="onAdd($event)"></app-credential-form>
-    </div>
-
-    <!-- Error Message -->
-    <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
-
-    <!-- Credentials Grid -->
-    <div class="vault-grid" *ngIf="filteredCredentials.length > 0">
-      <app-credential-card 
-        *ngFor="let cred of filteredCredentials" 
-        [credential]="cred" 
-        (onDelete)="onDelete($event)">
-      </app-credential-card>
-    </div>
-
-    <!-- Empty State -->
-    <div class="empty-state" *ngIf="filteredCredentials.length === 0 && !errorMessage">
-      <div class="empty-icon">🔐</div>
-      <h3>{{ searchTerm ? 'No credentials found' : 'Your vault is empty' }}</h3>
-      <p>{{ searchTerm ? 'Try adjusting your search terms' : 'Add your first credential to get started' }}</p>
-      <button *ngIf="!searchTerm" class="add-btn" (click)="toggleForm()">
-        <span>+</span>
-        Add Your First Credential
-      </button>
     </div>
   </div>
-</div>
+
+  <!-- Credentials List -->
+  <div class="cards-container" *ngIf="filteredCredentials.length > 0">
+    <app-credential-card
+      *ngFor="let cred of filteredCredentials; trackBy: trackById"
+      [credential]="cred"
+      (onDelete)="askDelete($event)"
+      (onEdit)="onEditCredential($event)"
+      (onCopy)="handleCopy($event)"
+      (onToggle)="handleToggle($event)">
+    </app-credential-card>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="filteredCredentials.length === 0">
+    <div class="empty-message">
+      <p *ngIf="searchTerm || showOnlyWeak">
+        No credentials found matching your filters.
+      </p>
+      <p *ngIf="!searchTerm && !showOnlyWeak">
+        Your vault is empty. Click the ＋ button to add your first credential.
+      </p>
+    </div>
+  </div>

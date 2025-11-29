@@ -1,0 +1,87 @@
+<div class="import-dialog">
+  <header class="dialog-header">
+    <h3 class="dialog-title">Import Credentials</h3>
+  </header>
+
+  <div class="dialog-body">
+    <div class="instructions">
+      <p class="instructions-title">Supported Formats:</p>
+      <ul class="format-list">
+        <li><strong>JSON</strong> - Array of credential objects</li>
+        <li><strong>CSV</strong> - Comma-separated values with headers</li>
+      </ul>
+
+      <div class="format-example">
+        <p class="example-title">JSON Format:</p>
+        <pre class="code-block">[
+  &#123;
+    "site": "example.com",
+    "username": "user123",
+    "password": "password123"
+  &#125;,
+  &#123;
+    "site": "another.com",
+    "username": "user456",
+    "password": "password456"
+  &#125;
+]</pre>
+      </div>
+
+      <div class="format-example">
+        <p class="example-title">CSV Format:</p>
+        <pre class="code-block">Site,Username,Password
+"example.com","user123","password123"
+"another.com","user456","password456"</pre>
+      </div>
+
+      <div class="requirements">
+        <p class="requirements-title">Requirements:</p>
+        <ul class="requirements-list">
+          <li>Each credential must have a <strong>site</strong> and <strong>username</strong></li>
+          <li>Password is optional but recommended</li>
+          <li>CSV files must include header row: Site, Username, Password</li>
+          <li>CSV values containing commas should be quoted</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="file-selection">
+      <input 
+        #fileInput
+        type="file" 
+        accept=".json,.csv"
+        (change)="onFileChange($event)"
+        style="display: none;">
+      
+      <button 
+        class="btn-select-file" 
+        (click)="triggerFileInput()"
+        type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span>{{ selectedFile ? selectedFile.name : 'Choose File' }}</span>
+      </button>
+
+      <div *ngIf="selectedFile" class="file-info">
+        <span class="file-name">{{ selectedFile.name }}</span>
+        <span class="file-size">({{ formatFileSize(selectedFile.size) }})</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="dialog-actions">
+    <button class="btn btn-secondary" (click)="cancel()" type="button">
+      Cancel
+    </button>
+    <button 
+      class="btn btn-primary" 
+      (click)="confirm()" 
+      [disabled]="!selectedFile"
+      type="button">
+      Import
+    </button>
+  </footer>
+</div>

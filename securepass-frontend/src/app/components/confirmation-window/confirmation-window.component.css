@@ -1,0 +1,78 @@
+.window-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  -webkit-overflow-scrolling: touch;
+}
+
+.window {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 420px;
+  max-width: calc(100% - 40px);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.32);
+  outline: none;
+}
+
+.cw-header { margin-bottom: 8px; }
+.cw-title { margin: 0; font-size: 1.125rem; }
+
+.cw-body { margin-top: 6px; color: #444; }
+.cw-message { margin: 0; line-height: 1.4; }
+
+.cw-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+}
+
+.btn-secondary {
+  background: #f1f1f1;
+  color: #222;
+  border: none;
+}
+
+/* Dark mode - BLACK TONES */
+:host-context(.dark) .window {
+  background: #000000;
+  border: 1px solid #1a1a1a;
+}
+
+:host-context(.dark) .cw-title {
+  color: #ffffff;
+}
+
+:host-context(.dark) .cw-body {
+  color: #cccccc;
+}
+
+:host-context(.dark) .btn-secondary {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+:host-context(.dark) .btn-secondary:hover {
+  background: #2a2a2a;
+}

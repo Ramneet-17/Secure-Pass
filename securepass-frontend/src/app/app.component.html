@@ -1,0 +1,42 @@
+<!-- src/app/app.component.html -->
+
+<!-- NAVBAR -->
+<app-navbar *ngIf="showNavbar" (onSearch)="onNavbarSearch($event)"></app-navbar>
+
+<main class="app-main">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- GLOBAL FLOATING ADD BUTTON (opens global form via service) -->
+<button *ngIf="showAddButton" #floatingAdd class="floating-add" type="button"
+        (click)="credentialFormService.open(null)"
+        aria-label="Add new credential"
+        title="Add new credential">
+  <span class="plus">＋</span>
+</button>
+
+<!-- GLOBAL CREDENTIAL FORM MODAL -->
+<div class="form-overlay" [class.show]="showForm$ | async" (click)="credentialFormService.close()">
+  <div class="form-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <app-credential-form
+      [editCredential]="editCredential$ | async"
+      (onAdd)="onAddFromModal($event)"
+      (onUpdate)="onUpdateFromModal($event)"
+      (onCancel)="onCancelFromModal()">
+    </app-credential-form>
+  </div>
+</div>
+
+<!-- ROOT CONFIRMATION WINDOW -->
+<app-confirmation-window
+  *ngIf="activeConfirm"
+  [visible]="true"
+  [title]="activeConfirm.title"
+  [message]="activeConfirm.message"
+  [loading]="activeConfirm.loading"
+  (confirmed)="onRootConfirmed()"
+  (cancelled)="onRootCancelled()">
+</app-confirmation-window>
+
+<!-- TOASTS -->
+<app-toast></app-toast>

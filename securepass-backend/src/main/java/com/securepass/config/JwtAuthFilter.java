@@ -32,7 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
 
         try {
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            if (authHeader != null && authHeader.startsWith("Bearer ") && authHeader.length() > 7) {
                 String token = authHeader.substring(7); // Remove "Bearer "
 
                 if (jwtUtil.validateToken(token)) {
@@ -60,8 +60,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.error("JWT processing error: {}", e.getMessage(), e);
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Invalid or expired token\"}");
             return;
         }
 

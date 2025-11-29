@@ -25,6 +25,8 @@ import java.util.Arrays;
 public class WebSecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final RateLimitingFilter rateLimitingFilter;
+    private final ContentTypeFilter contentTypeFilter;
 
     @Value("${app.cors.allowed-origins:http://localhost:4200}")
     private String[] allowedOrigins;
@@ -34,12 +36,25 @@ public class WebSecurityConfig {
         log.info("🔒 Configuring Spring Security...");
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Disabled for stateless JWT API
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"))
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> contentType.and())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .maxAgeInSeconds(31536000)
+                                .includeSubDomains(true)
+                        )
+                        // XSS Protection header is deprecated in modern browsers (CSP handles this)
+                        // Removed to avoid compatibility issues with Spring Security 6.x
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(contentTypeFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         log.info("✅ Security configuration complete. Public routes: /auth/**, All other routes secured.");
@@ -52,7 +67,16 @@ public class WebSecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("*"));
+        // Whitelist specific headers instead of allowing all
+        config.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
         config.setExposedHeaders(Arrays.asList("Authorization", "X-Total-Count"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

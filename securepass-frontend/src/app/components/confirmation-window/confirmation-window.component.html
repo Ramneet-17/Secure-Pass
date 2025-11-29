@@ -1,0 +1,42 @@
+<!-- src/app/components/confirmation-window/confirmation-window.component.html -->
+<div class="window-backdrop" *ngIf="visible" [attr.aria-hidden]="!visible">
+  <div
+    class="window"
+    #dialog
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cw-title"
+    aria-describedby="cw-message"
+  >
+    <header class="cw-header">
+      <h3 id="cw-title" class="cw-title">{{ title }}</h3>
+    </header>
+
+    <div class="cw-body">
+      <!-- Visible message, referenced by aria-describedby -->
+      <p id="cw-message" class="cw-message">{{ message }}</p>
+    </div>
+
+    <footer class="cw-actions">
+      <button
+        class="btn btn-secondary"
+        (click)="cancel()"
+        [disabled]="loading"
+        aria-label="Cancel"
+      >
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary"
+        (click)="confirm()"
+        [disabled]="loading"
+        aria-label="Confirm"
+      >
+        <span *ngIf="!loading">Confirm</span>
+        <span *ngIf="loading">Processing…</span>
+      </button>
+    </footer>
+  </div>
+</div>

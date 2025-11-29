@@ -45,24 +45,47 @@ git clone https://github.com/Ramneet-17/Secure-Pass.git
 cd Secure-Pass
 
 # Step 2: Set up environment variables
-# Create a file named `.env` in the root directory with the following content:
+# Create a file named `.env` in the root directory
+# Copy .env.example and fill in your values
+cp .env.example .env
 
-POSTGRES_URL=jdbc:postgresql://postgres:5432/securepassdb
-POSTGRES_USER=your_username
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=securepass
+# See SECURITY_SETUP.md for detailed instructions on generating secure keys
+# Required variables:
+# - POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD
+# - JWT_SECRET (min 32 characters)
+# - AES_SECRET_KEY (16, 24, or 32 bytes)
+# - ADMIN_PASSWORD (min 8 characters)
+# - SPRING_PROFILES_ACTIVE=dev (or 'prod' for production)
 
 # Step 3: Build and run all services using Docker Compose
 docker-compose up --build
 
-
-# Step 4 : Run Angular frontend separately in development mode
-cd frontend
+# Step 4: Run Angular frontend separately in development mode
+cd securepass-frontend
 npm install
 ng serve
 
 # The frontend will be available at: http://localhost:4200
 ```
+
+### Building Backend with Maven Profiles
+
+```bash
+# Development build (uses dev profile)
+cd securepass-backend
+mvn clean install -Pdev
+
+# Production build (no profile - uses application.yml)
+mvn clean install
+
+# Run with dev profile
+mvn spring-boot:run -Pdev
+
+# Run for production (no profile)
+mvn spring-boot:run
+```
+
+See [MAVEN_PROFILES.md](securepass-backend/MAVEN_PROFILES.md) for detailed Maven profile usage.
 
 ## ✅ Usage
 - Log in using your admin password (u can change it before in securepass-backend/src/main/java/com/securepass/service/AdminUserInitializer.java)
@@ -98,7 +121,14 @@ Secure-Pass/
 
 ## 🔐 Security
 
-All credentials are encrypted using AES before storage. No passwords are ever sent or stored in plain text.
+All credentials are encrypted using AES-GCM before storage. No passwords are ever sent or stored in plain text.
+
+**⚠️ Important**: This project has undergone comprehensive security improvements. Please see [SECURITY_SETUP.md](SECURITY_SETUP.md) for:
+- Security improvements implemented
+- Required environment variables
+- Setup instructions
+- Production deployment checklist
+- Migration notes for existing data
 
 ## 📄 License
 
